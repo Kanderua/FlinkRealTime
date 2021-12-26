@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.atgugu.realtime.app.BaseAppV1;
 import com.atgugu.realtime.bean.TableProcess;
 import com.atgugu.realtime.common.Constant;
+import com.atguigu.realtime.app.BaseAppV1;
 import com.atguigu.realtime.bean.TableProcess;
 import com.atguigu.realtime.common.Constant;
 import org.apache.flink.api.common.state.BroadcastState;

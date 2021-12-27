@@ -13,7 +13,7 @@ import java.util.Properties;
 /**
  * @author yj233333
  */
-public class FlinksourceUtil {
+public class FlinkSourceUtil {
     public static SourceFunction<String> getKafkaSource(String groupId, String topic){
         //存储配置信息的类
         Properties props = new Properties();

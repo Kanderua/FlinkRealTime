@@ -1,6 +1,6 @@
 package com.atguigu.realtime.app;
 
-import com.atguigu.realtime.util.FlinksourceUtil;
+import com.atguigu.realtime.util.FlinkSourceUtil;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.hashmap.HashMapStateBackend;
 import org.apache.flink.streaming.api.CheckpointingMode;
@@ -15,11 +15,12 @@ public abstract class BaseAppV1 {
     protected abstract void run(StreamExecutionEnvironment env, DataStreamSource<String> stream);
 
     public void init(int port, int p, String ck,String groupId, String topic){
+        System.setProperty("HADOOP_USER_NAME", "atguigu");
         Configuration conf = new Configuration();
 
-        conf.setInteger("rest.port",20000);
+        conf.setInteger("rest.port",port);
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(conf);
-        env.setParallelism(1);
+        env.setParallelism(p);
 
         //开启checkpoint
         //周期
@@ -27,7 +28,7 @@ public abstract class BaseAppV1 {
         //状态后端
         env.setStateBackend(new HashMapStateBackend());
         //索引存储
-        env.getCheckpointConfig().setCheckpointStorage("hdfs://hadoop162:8082/gmall/ck/"+ck);;
+        env.getCheckpointConfig().setCheckpointStorage("hdfs://hadoop162:8020/gmall/ck/"+ck);;
 
         //checkpoint并行数量
         env.getCheckpointConfig().setMaxConcurrentCheckpoints(1);
@@ -41,7 +42,7 @@ public abstract class BaseAppV1 {
         env.getCheckpointConfig().enableExternalizedCheckpoints(CheckpointConfig.ExternalizedCheckpointCleanup.RETAIN_ON_CANCELLATION);
 
         //开始读取kafka的topic
-        DataStreamSource<String> stream = env.addSource(FlinksourceUtil.getKafkaSource(groupId, topic));
+        DataStreamSource<String> stream = env.addSource(FlinkSourceUtil.getKafkaSource(groupId, topic));
         //具体业务的执行
         run(env,stream);
         try{

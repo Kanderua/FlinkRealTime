@@ -15,4 +15,6 @@ public class Constant {
     public static final String TOPIC_DWD_PAGE = "dwd_page";
     public static final String TOPIC_DWD_DISPLAY = "dwd_display";
     public static final String TOPIC_DWD_START = "dwd_start";
+    public static final String SINK_TO_KAFKA = "kafka";
+    public static final String SINK_TO_HBASE = "hbase";
 }

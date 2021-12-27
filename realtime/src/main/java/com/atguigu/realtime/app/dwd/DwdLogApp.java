@@ -7,8 +7,8 @@ import com.alibaba.fastjson.JSONAware;
 import com.alibaba.fastjson.JSONObject;
 import com.atguigu.realtime.app.BaseAppV1;
 import com.atguigu.realtime.common.Constant;
-import com.atguigu.realtime.util.FlinkSinkUtil;
 import com.atguigu.realtime.util.IterToList;
+import com.atguigu.realtime.util.FlinkSinkUtil;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
@@ -80,7 +80,9 @@ public class DwdLogApp extends BaseAppV1 {
         SingleOutputStreamOperator<JSONObject> startStream = stream
                 .process(new ProcessFunction<JSONObject, JSONObject>() {
                     @Override
-                    public void processElement(JSONObject value, Context ctx, Collector<JSONObject> out) throws Exception {
+                    public void processElement(JSONObject value,
+                    Context ctx,
+                    Collector<JSONObject> out) throws Exception {
                         //啟動(主流)  曝光和頁面(側輸出流)
                         JSONObject start = value.getJSONObject("start");
                         if (start != null) {
@@ -96,13 +98,16 @@ public class DwdLogApp extends BaseAppV1 {
 
                             JSONArray displays = value.getJSONArray("displays");
                             if (displays != null) {
+                            Long ts = value.getLong("ts");
+                        JSONObject common = value.getJSONObject("common");
+                        JSONObject page1 = value.getJSONObject("page");
                                 //將曝光數據由一條數據包含多個信息列切分成一個信息包含一個完整的信息
                                 for (int i = 0; i < displays.size(); i++) {
                                     JSONObject display = displays.getJSONObject(i);
-
-                                    display.put("ts", value.getLong("ts"));
-                                    display.putAll(value.getJSONObject("common"));
-                                    display.putAll(value.getJSONObject("page"));
+                            // display中添加一些其他的信息
+                            display.put("ts", ts);
+                            display.putAll(common);
+                            display.putAll(page1);
                                     ctx.output(displayTag, display);
 
                                 }

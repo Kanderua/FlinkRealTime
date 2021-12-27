@@ -20,7 +20,7 @@ public class FlinkSourceUtil {
         //配置信息设置
         props.put("bootstrap.servers", Constant.KAFKA_BROKERS);
         props.put("group.id",groupId);
-        props.put("atto.offset.reset","latest");
+        props.put("auto.offset.reset","latest");
         props.put("isolation.level","read_committed");
 
         return new FlinkKafkaConsumer<String>(

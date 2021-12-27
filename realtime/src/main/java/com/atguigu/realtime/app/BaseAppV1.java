@@ -28,7 +28,7 @@ public abstract class BaseAppV1 {
         //状态后端
         env.setStateBackend(new HashMapStateBackend());
         //索引存储
-        env.getCheckpointConfig().setCheckpointStorage("hdfs://hadoop162:8020/gmall/ck/"+ck);;
+        env.getCheckpointConfig().setCheckpointStorage("hdfs://hadoop162:8020/gmall/ck/"+ck);
 
         //checkpoint并行数量
         env.getCheckpointConfig().setMaxConcurrentCheckpoints(1);

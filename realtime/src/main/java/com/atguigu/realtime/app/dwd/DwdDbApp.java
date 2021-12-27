@@ -48,14 +48,14 @@ public class DwdDbApp extends BaseAppV1 {
         //filteredStream.print();
 
         // 5.动态分流   事实表到Kafka, 一个流         到hbase的是另一个流
-        Tuple2<DataStream<Tuple2<JSONObject, TableProcess>>, DataStream<Tuple2<JSONObject, TableProcess>>> kafkaHbaseStream = dynamicSplit(filteredStream);
+        Tuple2<DataStream<Tuple2<JSONObject, TableProcess>>, DataStream<Tuple2<JSONObject, TableProcess>>> kafkaHbaseStreams = dynamicSplit(filteredStream);
         //测试
         //kafkaHbaseStream.f0.print();
         //kafkaHbaseStream.f1.print();
 
         // 6. 不同的流写入到不同sink中
-        writeToKafka(kafkaHbaseStream.f0);
-        writeToHbase(kafkaHbaseStream.f1);
+        writeToKafka(kafkaHbaseStreams.f0);
+        writeToHbase(kafkaHbaseStreams.f1);
     }
 
     private void writeToHbase(DataStream<Tuple2<JSONObject, TableProcess>> stream) {

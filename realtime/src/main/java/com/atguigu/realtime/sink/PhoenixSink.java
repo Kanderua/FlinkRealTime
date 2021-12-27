@@ -27,7 +27,7 @@ public class PhoenixSink extends RichSinkFunction<Tuple2<JSONObject, TableProces
         //连接phoenix需要建立连接
         phoenixConn = JdbcUtil.getJdbcConnection(Constant.PHOENIX_DRIVER, Constant.PHOENIX_URL);
 
-        tableCreatedSteate = getRuntimeContext().getState(new ValueStateDescriptor<Boolean>("tableCreate", Boolean.class));
+        tableCreatedSteate = getRuntimeContext().getState(new ValueStateDescriptor<Boolean>("tableCreatedSteate", Boolean.class));
     }
 
     @Override

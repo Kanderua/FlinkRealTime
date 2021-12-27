@@ -2,9 +2,6 @@ package com.atguigu.realtime.app.dwd;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.atgugu.realtime.app.BaseAppV1;
-import com.atgugu.realtime.bean.TableProcess;
-import com.atgugu.realtime.common.Constant;
 import com.atguigu.realtime.app.BaseAppV1;
 import com.atguigu.realtime.bean.TableProcess;
 import com.atguigu.realtime.common.Constant;

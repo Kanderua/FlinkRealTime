@@ -2,13 +2,13 @@ package com.atguigu.realtime.app.dwd;
 
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONAware;
 import com.alibaba.fastjson.JSONObject;
 import com.atguigu.realtime.app.BaseAppV1;
 import com.atguigu.realtime.common.Constant;
 import com.atguigu.realtime.util.FlinkSinkUtil;
 import com.atguigu.realtime.util.IterToList;
-import com.google.gson.JsonObject;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
@@ -49,9 +49,9 @@ public class DwdLogApp extends BaseAppV1 {
         //stream.print();
 
         // 1. 纠正新老客户的
-        SingleOutputStreamOperator<JSONObject> validateStream = validateNewOrIld(stream);
+        SingleOutputStreamOperator<JSONObject> validatedStream = validateNewOrOld(stream);
         // 2. 分流:页面 曝光 启动
-        HashMap<String, DataStream<JSONObject>> threeStreams = splitStream(validateStream);
+        HashMap<String, DataStream<JSONObject>> threeStreams = splitStream(validatedStream);
 
 
         // 3. 不同的流写入不同个topic中
@@ -73,13 +73,11 @@ public class DwdLogApp extends BaseAppV1 {
                 .addSink(FlinkSinkUtil.getKafkaSink(Constant.TOPIC_DWD_START));
     }
 
-    private HashMap<String, DataStream<JSONObject>> splitStream(SingleOutputStreamOperator<JSONObject> validateStream) {
-        OutputTag<JSONObject> pageTag = new OutputTag<JSONObject>(PAGE) {
-        };
-        OutputTag<JSONObject> displayTag = new OutputTag<JSONObject>(DISPLAY) {
-        };
+    private HashMap<String, DataStream<JSONObject>> splitStream(SingleOutputStreamOperator<JSONObject> stream) {
+        OutputTag<JSONObject> pageTag = new OutputTag<JSONObject>(PAGE) {        };
+        OutputTag<JSONObject> displayTag = new OutputTag<JSONObject>(DISPLAY) {        };
         //分流  頁面  曝光  啟動
-        SingleOutputStreamOperator<JSONObject> startStream = validateStream
+        SingleOutputStreamOperator<JSONObject> startStream = stream
                 .process(new ProcessFunction<JSONObject, JSONObject>() {
                     @Override
                     public void processElement(JSONObject value, Context ctx, Collector<JSONObject> out) throws Exception {
@@ -96,7 +94,7 @@ public class DwdLogApp extends BaseAppV1 {
                                 ctx.output(pageTag, value);
                             }
 
-                            JSONObject displays = value.getJSONObject("displays");
+                            JSONArray displays = value.getJSONArray("displays");
                             if (displays != null) {
                                 //將曝光數據由一條數據包含多個信息列切分成一個信息包含一個完整的信息
                                 for (int i = 0; i < displays.size(); i++) {
@@ -120,14 +118,14 @@ public class DwdLogApp extends BaseAppV1 {
         // 返回三個流:可以考慮以下三種結構
         // Tuple   list   map
         // 最終選擇map,Tuple和list需要經常查看,不容易記憶;
-        HashMap<String, DataStream<JsonObject>> map = new HashMap<>();
+        HashMap<String, DataStream<JSONObject>> map = new HashMap<>();
         map.put(START, startStream);
         map.put(DISPLAY, displayStream);
         map.put(PAGE, pageStream);
         return map;
     }
 
-    private SingleOutputStreamOperator<JSONObject> validateNewOrIld(DataStreamSource<String> stream) {
+    private SingleOutputStreamOperator<JSONObject> validateNewOrOld(DataStreamSource<String> stream) {
         /*
         如何判斷一個用戶是否是新老用戶
 

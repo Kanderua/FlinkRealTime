@@ -3,6 +3,7 @@ package com.atguigu.realtime.util;
 import com.alibaba.fastjson.JSONObject;
 import com.atguigu.realtime.bean.TableProcess;
 import com.atguigu.realtime.common.Constant;
+import com.atguigu.realtime.sink.PhoenixSink;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer;
@@ -57,5 +58,9 @@ public class FlinkSinkUtil {
                 //消费语义
                 FlinkKafkaProducer.Semantic.EXACTLY_ONCE
         );
+    }
+
+    public static SinkFunction<Tuple2<JSONObject, TableProcess>> getPhoenixSink() {
+        return new PhoenixSink();
     }
 }

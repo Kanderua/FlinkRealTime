@@ -59,7 +59,30 @@ public class DwdDbApp extends BaseAppV1 {
     }
 
     private void writeToHbase(DataStream<Tuple2<JSONObject, TableProcess>> stream) {
+        // 维度表数据写入到Hbase中, 通过Phoenix写
+        /*
+        1. 表如何建
+            a: 可以在程序启动之前, 通过手工的方式创建每个表
+                    简单.
+                    不够灵活. 如何后期维度表有增加, 需要重新手动创建新增的表
+            b: 自动创建
+                当某个维度表的第一条数据进来的时候, 自动创建这条数据对应的表
 
+                灵活, 应对维度表的增加
+
+        2. 数据如何插入
+            用jdbc sink ?
+                只能执行一个sql语句, 但是我们有建表语句, 也有插入语句, 所以不能使用官方提供的jdbc sink
+
+
+         需要自定义sink
+
+         */
+
+        stream
+                //按照sink表进行分组,保证同一张表的数据能够进入一个组,数据不会发生混乱
+                .keyBy(t->t.f1.getSink_table())
+                .addSink(FlinkSinkUtil.getPhoenixSink());
     }
 
     private void writeToKafka(DataStream<Tuple2<JSONObject, TableProcess>> stream) {

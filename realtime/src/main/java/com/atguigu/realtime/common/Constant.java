@@ -15,6 +15,12 @@ public class Constant {
     public static final String TOPIC_DWD_PAGE = "dwd_page";
     public static final String TOPIC_DWD_DISPLAY = "dwd_display";
     public static final String TOPIC_DWD_START = "dwd_start";
+
+    //sink中的部分参数
     public static final String SINK_TO_KAFKA = "kafka";
     public static final String SINK_TO_HBASE = "hbase";
+
+    //phoenix的一些参数
+    public static final String PHOENIX_DRIVER = "org.apache.phoenix.jdbc.PhoenixDriver";
+    public static final String PHOENIX_URL = "jdbc:phoenix:hadoop162,hadoop163,hadoop164:2181;";
 }

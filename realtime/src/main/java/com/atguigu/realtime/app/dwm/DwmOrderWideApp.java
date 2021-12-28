@@ -33,5 +33,5 @@ public class DwmOrderWideApp extends BaseAppV2 {
                        HashMap<String, DataStreamSource<String>> topicToStream) {
         topicToStream.get(TOPIC_DWD_ORDER_INFO).print("info");
         topicToStream.get(TOPIC_DWD_ORDER_DETAIL).print("detail");
-    }
+    }a
 }

@@ -26,4 +26,5 @@ public class Constant {
 
     //dwm
     public static final String TOPIC_DWM_UV = "dwm_uv";
+    public static final String TOPIC_DWM_UJ = "dwm_uj";
 }

@@ -1,9 +1,11 @@
 package com.atguigu.realtime.app.dwm;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONAware;
 import com.alibaba.fastjson.JSONObject;
 import com.atguigu.realtime.app.BaseAppV1;
 import com.atguigu.realtime.common.Constant;
+import com.atguigu.realtime.util.FlinkSinkUtil;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.cep.CEP;
 import org.apache.flink.cep.PatternSelectFunction;
@@ -34,28 +36,36 @@ import java.util.Map;
  *
  *
  * 数据来源于页面日志:
- *      从一堆数据中,找到具体特殊特征的数据------------使用CEP技术,使用模式进行筛选
+ *      从一堆数据中,找到具体特殊特征的数据------------使用CEP技术,使用模式进行筛选,
+ *      这里考虑一种特殊情况,即进入页面后快速跳出,然后在单位时间内又再次进入,
+ *      其数据如下:
+ *          "{\"common\":{\"mid\":\"101\"},\"page\":{\"page_id\":\"home\"},\"ts\":10000} ",
+ *          "{\"common\":{\"mid\":\"101\"},\"page\":{\"page_id\":\"home\"},\"ts\":11000} ",
+ *          两者都没有下一个页面,但是因为时间间隔较短,所以在模式上很容易把两个当作一个进行处理
  * */
-public class DwmUserJumpDetailApp extends BaseAppV1 {
+public class DwmUserJumpDetailApp_1 extends BaseAppV1 {
     public static void main(String[] args) {
-        new DwmUserJumpDetailApp().init(3002, 1, "DwmUserJumpDetailApp", "DwmUserJumpDetailApp", Constant.TOPIC_DWD_PAGE);
+        new DwmUserJumpDetailApp_1().init(3002, 1, "DwmUserJumpDetailApp_1", "DwmUserJumpDetailApp_1", Constant.TOPIC_DWD_PAGE);
     }
 
     @Override
     protected void run(StreamExecutionEnvironment env,
                        DataStreamSource<String> stream) {
 
-        //测试数据
-        stream =
-                env.fromElements(
-                        "{\"common\":{\"mid\":\"101\"},\"page\":{\"page_id\":\"home\"},\"ts\":10000} ",
-                        "{\"common\":{\"mid\":\"101\"},\"page\":{\"page_id\":\"home\"},\"ts\":11000} ",
-                        "{\"common\":{\"mid\":\"102\"},\"page\":{\"page_id\":\"home\"},\"ts\":12000}",
-                        "{\"common\":{\"mid\":\"102\"},\"page\":{\"page_id\":\"good_list\",\"last_page_id\":" +
-                                "\"home\"},\"ts\":14000} ",
-                        "{\"common\":{\"mid\":\"102\"},\"page\":{\"page_id\":\"good_list\",\"last_page_id\":" +
-                                "\"detail\"},\"ts\":50000} "
-                );
+
+
+        ////测试数据
+        //stream =
+        //        env.fromElements(
+        //                "{\"common\":{\"mid\":\"101\"},\"page\":{\"page_id\":\"home\"},\"ts\":10000} ",
+        //                "{\"common\":{\"mid\":\"101\"},\"page\":{\"page_id\":\"home\"},\"ts\":11000} ",
+        //                "{\"common\":{\"mid\":\"102\"},\"page\":{\"page_id\":\"home\"},\"ts\":12000}",
+        //                "{\"common\":{\"mid\":\"102\"},\"page\":{\"page_id\":\"good_list\",\"last_page_id\":" +
+        //                        "\"home\"},\"ts\":14000} ",
+        //                "{\"common\":{\"mid\":\"102\"},\"page\":{\"page_id\":\"good_list\",\"last_page_id\":" +
+        //                        "\"detail\"},\"ts\":50000} "
+        //        );
+
 
 
 
@@ -87,7 +97,7 @@ public class DwmUserJumpDetailApp extends BaseAppV1 {
                     @Override
                     public boolean filter(JSONObject value) throws Exception {
                         String lastPageId = value.getJSONObject("page").getString("last_page_id");
-                        return lastPageId != null && lastPageId.length() > 0;
+                        return lastPageId == null || lastPageId.length() == 0;
                     }
                 })
                 .within(Time.seconds(5));
@@ -110,11 +120,16 @@ public class DwmUserJumpDetailApp extends BaseAppV1 {
                     @Override
                     public JSONObject select(Map<String,
                             List<JSONObject>> map) throws Exception {
-                        return null;
+                        return map.get("entry").get(0);
                     }
                 }
         );
-        normal.getSideOutput(new OutputTag<JSONObject>("uj"){}).print("uj");
+
+        normal
+                .union(normal.getSideOutput(new OutputTag<JSONObject>("uj"){}))
+                .map(JSONAware::toJSONString)
+                .addSink(FlinkSinkUtil.getKafkaSink(Constant.TOPIC_DWM_UJ));
+                ;
 
     }
 }

@@ -5,3 +5,5 @@
 */dependency-reduced-pom.xml
 mvnw
 *.cmd
+target
+.mvn

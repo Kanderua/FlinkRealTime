@@ -23,4 +23,7 @@ public class Constant {
     //phoenix的一些参数
     public static final String PHOENIX_DRIVER = "org.apache.phoenix.jdbc.PhoenixDriver";
     public static final String PHOENIX_URL = "jdbc:phoenix:hadoop162,hadoop163,hadoop164:2181;";
+
+    //dwm
+    public static final String TOPIC_DWM_UV = "dwm_uv";
 }

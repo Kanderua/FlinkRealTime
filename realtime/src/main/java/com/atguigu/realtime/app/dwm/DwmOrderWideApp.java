@@ -1,9 +1,20 @@
 package com.atguigu.realtime.app.dwm;
 
+import com.alibaba.fastjson.JSON;
 import com.atguigu.realtime.app.BaseAppV2;
+import com.atguigu.realtime.bean.OrderDetail;
+import com.atguigu.realtime.bean.OrderInfo;
+import com.atguigu.realtime.bean.OrderWide;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
+import org.apache.flink.streaming.api.datastream.KeyedStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.co.ProcessJoinFunction;
+import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.util.Collector;
 
+import java.time.Duration;
 import java.util.HashMap;
 import static com.atguigu.realtime.common.Constant.TOPIC_DWD_ORDER_DETAIL;
 import static com.atguigu.realtime.common.Constant.TOPIC_DWD_ORDER_INFO;
@@ -31,7 +42,53 @@ public class DwmOrderWideApp extends BaseAppV2 {
     @Override
     protected void run(StreamExecutionEnvironment env,
                        HashMap<String, DataStreamSource<String>> topicToStream) {
-        topicToStream.get(TOPIC_DWD_ORDER_INFO).print("info");
-        topicToStream.get(TOPIC_DWD_ORDER_DETAIL).print("detail");
+        //1. 事实表的join
+        SingleOutputStreamOperator<OrderWide> orderWideStreamOperator = factsJoin(topicToStream);
+        //2. join维度数据
+
+        //3. 将宽表数据写入kafka中
+    }
+
+    private SingleOutputStreamOperator<OrderWide> factsJoin(HashMap<String, DataStreamSource<String>> topicToStream) {
+        //  interval join 连接两个事实表
+        //  注意事项: 其只支持事件时间,且必须是keyBy之后使用
+
+        //order_info事实表的数据流
+        KeyedStream<OrderInfo, Long> orderInfoStream = topicToStream
+                .get(TOPIC_DWD_ORDER_INFO)
+                .map(info -> JSON.parseObject(info, OrderInfo.class))
+                .assignTimestampsAndWatermarks(
+                        WatermarkStrategy
+                                .<OrderInfo>forBoundedOutOfOrderness(Duration.ofSeconds(3))
+                                .withTimestampAssigner((info, ts) -> info.getCreate_ts())
+                )
+                .keyBy(OrderInfo::getId);
+
+        //order_detail事实表的数据流
+        KeyedStream<OrderDetail, Long> orderDetailStream = topicToStream
+                .get(TOPIC_DWD_ORDER_DETAIL)
+                .map(info -> JSON.parseObject(info, OrderDetail.class))
+                .assignTimestampsAndWatermarks(
+                        WatermarkStrategy
+                                .<OrderDetail>forBoundedOutOfOrderness(Duration.ofSeconds(3))
+                                .withTimestampAssigner((detail, ts) -> detail.getCreate_ts())
+                )
+                .keyBy(OrderDetail::getOrder_id);
+
+
+        //join两张事实表数据流
+        return orderInfoStream
+                .intervalJoin(orderDetailStream)
+                //乱序程度设置区间
+                .between(Time.seconds(-5),Time.seconds(5))
+                .process(new ProcessJoinFunction<OrderInfo, OrderDetail, OrderWide>() {
+                    @Override
+                    public void processElement(OrderInfo left,
+                                               OrderDetail right,
+                                               Context ctx,
+                                               Collector<OrderWide> out) throws Exception {
+                        out.collect(new OrderWide(left,right));
+                    }
+                });
     }
 }

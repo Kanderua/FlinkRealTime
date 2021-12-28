@@ -15,6 +15,8 @@ public class Constant {
     public static final String TOPIC_DWD_PAGE = "dwd_page";
     public static final String TOPIC_DWD_DISPLAY = "dwd_display";
     public static final String TOPIC_DWD_START = "dwd_start";
+    public static final String TOPIC_DWD_ORDER_INFO = "dwd_order_info";
+    public static final String TOPIC_DWD_ORDER_DETAIL = "dwd_order_detail";
 
     //sink中的部分参数
     public static final String SINK_TO_KAFKA = "kafka";

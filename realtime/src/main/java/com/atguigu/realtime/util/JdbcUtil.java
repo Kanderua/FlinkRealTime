@@ -17,7 +17,7 @@ public class JdbcUtil {
         return DriverManager.getConnection(url);
     }
 
-    //参数依次是 数据库连接器     sql语句   反射a  TODO
+    //参数依次是 数据库连接器     sql语句   反射  TODO
     public static <T> List<T> queryList(Connection conn,
                                         String sql,
                                         Object[] args ,

@@ -10,6 +10,9 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 
 
+/**
+ * @author yj2333
+ */
 public abstract class BaseAppV1 {
 
     protected abstract void run(StreamExecutionEnvironment env, DataStreamSource<String> stream);

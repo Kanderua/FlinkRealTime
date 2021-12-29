@@ -1,8 +1,8 @@
 package com.atguigu.realtime.common;
 
+
 /**
- * @Author lizhenchao@atguigu.cn
- * @Date 2021/12/25 9:13
+ * @author yj2333
  */
 public class Constant {
     public static final String KAFKA_BROKERS = "hadoop162:9092,hadoop163:9092,hadoop164:9092";
@@ -24,7 +24,7 @@ public class Constant {
 
     //phoenix的一些参数
     public static final String PHOENIX_DRIVER = "org.apache.phoenix.jdbc.PhoenixDriver";
-    public static final String PHOENIX_URL = "jdbc:phoenix:hadoop162,hadoop163,hadoop164:2181;";
+    public static final String PHOENIX_URL = "jdbc:phoenix:hadoop162,hadoop163,hadoop164:2181";
 
     //dwm
     public static final String TOPIC_DWM_UV = "dwm_uv";

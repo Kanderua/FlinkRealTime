@@ -1,11 +1,18 @@
 package com.atguigu.realtime.app.dwm;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.atguigu.realtime.app.BaseAppV2;
 import com.atguigu.realtime.bean.OrderDetail;
 import com.atguigu.realtime.bean.OrderInfo;
 import com.atguigu.realtime.bean.OrderWide;
+import com.atguigu.realtime.common.Constant;
+import com.atguigu.realtime.util.DimUtil;
+import com.atguigu.realtime.util.JdbcUtil;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.functions.RichMapFunction;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
@@ -14,6 +21,7 @@ import org.apache.flink.streaming.api.functions.co.ProcessJoinFunction;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 
+import java.sql.Connection;
 import java.time.Duration;
 import java.util.HashMap;
 import static com.atguigu.realtime.common.Constant.TOPIC_DWD_ORDER_DETAIL;
@@ -43,10 +51,44 @@ public class DwmOrderWideApp extends BaseAppV2 {
     protected void run(StreamExecutionEnvironment env,
                        HashMap<String, DataStreamSource<String>> topicToStream) {
         //1. 事实表的join
-        SingleOutputStreamOperator<OrderWide> orderWideStreamOperator = factsJoin(topicToStream);
+        SingleOutputStreamOperator<OrderWide> orderWideStreamWithoutDims = factsJoin(topicToStream);
         //2. join维度数据
-
+        SingleOutputStreamOperator<OrderWide> orderWideStreamDims = factDims(orderWideStreamWithoutDims);
+        orderWideStreamDims.print();
         //3. 将宽表数据写入kafka中
+    }
+
+    private SingleOutputStreamOperator<OrderWide> factDims(SingleOutputStreamOperator<OrderWide> orderWideStreamWithoutDims) {
+        /*
+        * 每来一条数据,都需要通过phoenix中查找对应的维度数据,需要查询六张维度表
+        *
+         */
+        return orderWideStreamWithoutDims.map(new RichMapFunction<OrderWide, OrderWide>() {
+
+            private Connection phoenixConn;
+
+            @Override
+            public void open(Configuration parameters) throws Exception {
+                //建立jdbc连接对象
+                phoenixConn = JdbcUtil.getJdbcConnection(Constant.PHOENIX_DRIVER, Constant.PHOENIX_URL);
+            }
+
+            @Override
+            public void close() throws Exception {
+                if(phoenixConn!=null){
+                    phoenixConn.close();
+                }
+            }
+
+            @Override
+            public OrderWide map(OrderWide value) throws Exception {
+                //执行六个SQL,去查找对应的维度数据
+                JSONObject userInfo= DimUtil.readDimFromPhoenix(phoenixConn,"dim_user_info",value.getUser_id());
+                value.setUser_gender(userInfo.getString(""));
+
+                return null;
+            }
+        });
     }
 
     private SingleOutputStreamOperator<OrderWide> factsJoin(HashMap<String, DataStreamSource<String>> topicToStream) {
